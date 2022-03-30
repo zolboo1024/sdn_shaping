@@ -88,11 +88,15 @@ header padding_1 {
     bit<8> pad_1; 
 }
 
+struct metadata {
+    
+}
+
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     udp_t		 udp;
-    stats_t      interarr;
+    /*stats_t      interarr;*/
     padding_256  padd_256;
     padding_128  padd_128;
     padding_64   padd_64;
@@ -195,10 +199,6 @@ control MyIngress(inout headers hdr,
             ipv4_lpm.apply();
             ipv4_firewall.apply();
         }
-        lastTimestamp.read(tmp, 0);
-        lastTimestamp.write(0, standard_metadata.ingress_global_timestamp);
-        hdr.interarr.setValid();
-        hdr.interarr.interarrival = standard_metadata.ingress_global_timestamp - tmp;
 	/* add the padding */
         if ((packetLength+256)<=padTo) {
  		hdr.padd_256.setValid();
