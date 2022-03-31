@@ -2,6 +2,16 @@
 #include <core.p4>
 #include <v1model.p4>
 
+/* Define constants for types of packets */
+#define PKT_INSTANCE_TYPE_NORMAL 0
+#define PKT_INSTANCE_TYPE_INGRESS_CLONE 1
+#define PKT_INSTANCE_TYPE_EGRESS_CLONE 2
+#define PKT_INSTANCE_TYPE_COALESCED 3
+#define PKT_INSTANCE_TYPE_INGRESS_RECIRC 4
+#define PKT_INSTANCE_TYPE_REPLICATION 5
+#define PKT_INSTANCE_TYPE_RESUBMIT 6
+#define RECIRCULATE_TIMES 5
+
 const bit<16> TYPE_IPV4 = 0x800;
 
 /*************************************************************************
@@ -11,6 +21,8 @@ const bit<16> TYPE_IPV4 = 0x800;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
+typedef bit<32> cloneSpec_t;
+typedef bit<32> cloneSession_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -88,11 +100,15 @@ header padding_1 {
     bit<8> pad_1; 
 }
 
+struct metadata {
+    bit<8> counter;
+}
+
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     udp_t		 udp;
-    stats_t      interarr;
+    //stats_t      interarr;
     padding_256  padd_256;
     padding_128  padd_128;
     padding_64   padd_64;
@@ -160,6 +176,12 @@ control MyIngress(inout headers hdr,
     action ipv4_forward(egressSpec_t port) {
 		  standard_metadata.egress_spec = port;
     }
+ 
+ 	/* clone packet */
+ 	action clone_packet() {
+ 		const bit<32> REPORT_MIRROR_SESSION_ID = 500;
+ 		clone(CloneType.I2E, REPORT_MIRROR_SESSION_ID);
+ 	}
 
     table ipv4_firewall {
       key = {
@@ -192,13 +214,14 @@ control MyIngress(inout headers hdr,
 
     apply {
         if (hdr.ipv4.isValid()) {
+        	clone_packet();
             ipv4_lpm.apply();
             ipv4_firewall.apply();
         }
-        lastTimestamp.read(tmp, 0);
-        lastTimestamp.write(0, standard_metadata.ingress_global_timestamp);
-        hdr.interarr.setValid();
-        hdr.interarr.interarrival = standard_metadata.ingress_global_timestamp - tmp;
+        //lastTimestamp.read(tmp, 0);
+        //lastTimestamp.write(0, standard_metadata.ingress_global_timestamp);
+        //hdr.interarr.setValid();
+        //hdr.interarr.interarrival = standard_metadata.ingress_global_timestamp - tmp;
 	/* add the padding */
         if ((packetLength+256)<=padTo) {
  		hdr.padd_256.setValid();
@@ -246,7 +269,27 @@ control MyIngress(inout headers hdr,
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
-    apply {  }
+   
+    //To debug
+    table debug {
+        key = {
+        standard_metadata.instance_type: exact;
+            meta.counter: exact;
+        }
+        actions = {
+            NoAction;
+        }
+        size=1;
+        default_action=NoAction();
+    }
+
+    apply { 
+    	debug.apply();
+    	if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_INGRESS_CLONE) {
+    		meta.counter = meta.counter + 1;
+            recirculate({meta.counter});
+        }
+    }
 }
 
 /*************************************************************************
