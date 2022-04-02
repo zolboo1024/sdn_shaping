@@ -88,8 +88,15 @@ header padding_1 {
     bit<8> pad_1; 
 }
 
+struct info_t {
+    bit<8> rand_value;
+    ip4Addr_t srcAddr;
+    ip4Addr_t dstAddr;
+}
+
 struct metadata {
     
+    info_t info;
 }
 
 struct headers {
@@ -236,6 +243,12 @@ control MyIngress(inout headers hdr,
  		hdr.padd_1.setValid();
 		packetLength = packetLength+1;
 	}
+
+  /* Add digest here */
+  random(meta.info.rand_value,(bit<8>) 0, (bit<8>) 255);
+  meta.info.srcAddr = hdr.ipv4.srcAddr;
+  meta.info.dstAddr = hdr.ipv4.dstAddr;
+  digest(1, meta.info);
     }
 }
 
