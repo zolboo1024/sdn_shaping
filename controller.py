@@ -1,27 +1,29 @@
 #!/usr/bin/env python
 import sys
 #import struct
-#import os
+import os
 import time
 import atexit
 from scapy.all import sniff, hexdump
 #from scapy.all import Packet, IPOption
 #from scapy.all import IP, TCP, UDP, Raw
 
+shapingRN = False
 firstPacketTime = 0
 numReceived = 0 
 
 def handle_pkt(pkt):
-	global firstPacketTime
-	global numReceived
-	print("Packet from: "+pkt.load)
-	if firstPacketTime == 0:
-		firstPacketTime = time.time()
-	numReceived += 1
-
+    global shapingRN
+    if (shapingRN==False):
+        shapingRN==True
+        #start the shaping
+        os.system("sudo simple_switch_CLI --thrift-port 9090 < ./commands/event1Start.txt")
+        time.sleep(10)
+        os.system("sudo simple_switch_CLI --thrift-port 9090 < ./commands/end.txt")
 
 def main():
-    iface = 'veth4'
+    #veth8 (5 at the switch) is reserved for the controller
+    iface = 'veth8'
     print "sniffing on %s" % iface
     sys.stdout.flush()
     sniff(iface = iface,
@@ -32,11 +34,11 @@ def exit_handler():
 	global numReceived	
 	lastPacketTime = time.time()
 	diff = lastPacketTime - firstPacketTime
-	print("")
-	print("")
-	print("Number of pkts/sec: "+str(numReceived/diff))
-	print("")
+	print(str(numReceived/diff))
+
 atexit.register(exit_handler)
 
 if __name__ == '__main__':
+    #start the switch
+    os.system("sudo simple_switch_CLI --thrift-port 9090 < ./commands/baseCommands.txt")
     main()
