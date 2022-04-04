@@ -1,0 +1,2 @@
+table_add apply_shaping drop 4 =>
+table_add apply_shaping drop 1 =>

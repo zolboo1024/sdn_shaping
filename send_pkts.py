@@ -66,6 +66,6 @@ def sendPacket(sourceIP, msg):
 
 if __name__ == '__main__':
     while (True):
-    	sendPacket("1", "x")
-    	time.sleep(0.1)
+    	sendPacket("1", "1")
+    	time.sleep(float(sys.argv[1]))
     #event(int(sys.argv[1]))
