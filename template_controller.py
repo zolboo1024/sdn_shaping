@@ -4,7 +4,7 @@ from scapy.all import sniff, Packet, BitField, raw
 
 from p4utils.utils.helper import load_topo
 from p4utils.utils.sswitch_p4runtime_API import SimpleSwitchP4RuntimeAPI
-#from p4utils.utils.sswitch_thrift_API import SimpleSwitchThriftAPI
+from p4utils.utils.sswitch_thrift_API import SimpleSwitchThriftAPI
 from scapy.layers.l2 import Ether
 from scapy.sendrecv import sendp
 
@@ -45,8 +45,8 @@ class CpuController:
     def reset(self):
         self.controller.reset_state()
         thrift_port = self.topo.get_thrift_port(self.sw_name)
-        #controller_thrift = SimpleSwitchThriftAPI(thrift_port)
-        #controller_thrift.reset_state()
+        controller_thrift = SimpleSwitchThriftAPI(thrift_port)
+        controller_thrift.reset_state()
 
     def add_clone_session(self):
         if self.cpu_port:
