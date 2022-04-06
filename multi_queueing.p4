@@ -35,6 +35,56 @@ header ipv4_t {
     ip4Addr_t dstAddr;
 }
 
+
+/*
+ * Defining the headers for padding
+*/
+
+header padding_1024 {
+    bit<8192> pad_1024; 
+}
+
+header padding_512 {
+    bit<4096> pad_512; 
+}
+
+header padding_256 {
+    bit<2048> pad_256; 
+}
+
+header padding_128 {
+    bit<1024> pad_128; 
+}
+
+header padding_64 {
+    bit<512> pad_64; 
+}
+
+header padding_32 {
+    bit<256> pad_32; 
+}
+
+header padding_16 {
+    bit<128> pad_16; 
+}
+
+header padding_8 {
+    bit<64> pad_8; 
+}
+
+header padding_4 {
+    bit<32> pad_4; 
+}
+
+header padding_2 {
+    bit<16> pad_2; 
+}
+
+header padding_1 {
+    bit<8> pad_1; 
+}
+
+
 struct metadata {
     bit<32> meter_tag;
     bit<3> clone;
@@ -44,6 +94,16 @@ struct metadata {
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
+    /*stats_t      interarr;*/
+    padding_256  padd_256;
+    padding_128  padd_128;
+    padding_64   padd_64;
+    padding_32   padd_32;
+    padding_16   padd_16;
+    padding_8   padd_8;
+    padding_4   padd_4;
+    padding_2   padd_2;
+    padding_1   padd_1;
 }
 
 /*************************************************************************
@@ -93,7 +153,8 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
     register<bit<1>>(1) shaping;
     bit<1> tmp;
-
+    bit<32> padTo = 512;
+    bit<32> packetLength = standard_metadata.packet_length;
     direct_meter<bit<32>>(MeterType.packets) my_meter;
 
     action drop() {
@@ -133,7 +194,7 @@ control MyIngress(inout headers hdr,
             drop;
             NoAction;
         }
-        default_action = NoAction;
+        default_action = drop;
         size = 16;
     }
     table apply_shaping {
@@ -145,7 +206,7 @@ control MyIngress(inout headers hdr,
             cloneThis;
             NoAction;
         }
-        default_action = drop;
+        default_action = NoAction;
         size = 16;
     }
     action ipv4_forward(egressSpec_t port) {
@@ -185,7 +246,7 @@ control MyIngress(inout headers hdr,
             }
 	    shaping.read(tmp, 0);
 	    //if it has not started shaping
-	    if (tmp == 0){
+	    if (tmp == 0 && hdr.ipv4.srcAddr == 0x0a000101){
 		cloneThis();
 		shaping.write(0, 1);
 	    }
@@ -196,6 +257,43 @@ control MyIngress(inout headers hdr,
             // Filter based on meter status
             m_filter.apply();
         }
+        /* add the padding */
+        if ((packetLength+256)<=padTo) {
+        hdr.padd_256.setValid();
+        packetLength = packetLength+256;
+    }
+    if ((packetLength+128)<=padTo) {
+        hdr.padd_128.setValid();
+        packetLength = packetLength+128;
+    }
+    if ((packetLength+64)<=padTo) {
+        hdr.padd_64.setValid();
+        packetLength = packetLength+64;
+    }
+    if ((packetLength+32)<=padTo) {
+        hdr.padd_32.setValid();
+        packetLength = packetLength+32;
+    }
+    if ((packetLength+16)<=padTo) {
+        hdr.padd_16.setValid();
+        packetLength = packetLength+16;
+    }
+    if ((packetLength+8)<=padTo) {
+        hdr.padd_8.setValid();
+        packetLength = packetLength+8;
+    }
+    if ((packetLength+4)<=padTo) {
+        hdr.padd_4.setValid();
+        packetLength = packetLength+4;
+    }
+    if ((packetLength+2)<=padTo) {
+        hdr.padd_2.setValid();
+        packetLength = packetLength+2;
+    }
+    if ((packetLength+1)<=padTo) {
+        hdr.padd_1.setValid();
+        packetLength = packetLength+1;
+    }
     }
 }
 
@@ -256,7 +354,15 @@ control MyDeparser(packet_out packet, in headers hdr) {
 
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
-
+        packet.emit(hdr.padd_256);
+        packet.emit(hdr.padd_128);
+        packet.emit(hdr.padd_64);
+        packet.emit(hdr.padd_32);
+        packet.emit(hdr.padd_16);
+        packet.emit(hdr.padd_8);
+        packet.emit(hdr.padd_4);
+        packet.emit(hdr.padd_2);
+        packet.emit(hdr.padd_1);
     }
 }
 

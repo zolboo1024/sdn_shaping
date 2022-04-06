@@ -7,6 +7,6 @@ table_add m_filter NoAction 0 =>
 table_add m_filter NoAction 1 =>
 table_add apply_shaping cloneThis 4 =>
 table_add apply_shaping cloneThis 1 =>
-meter_array_set_rates my_meter 0.0000005:1 0.00001:1
+meter_array_set_rates my_meter 0.00001:1 0.00001:1
 set_queue_rate 1000 3
 mirroring_add 5 4

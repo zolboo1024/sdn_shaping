@@ -14,18 +14,25 @@ numReceived = 0
 def handle_pkt(pkt):
 	global firstPacketTime
 	global numReceived
-	print("Packet from: "+pkt.load)
+	print("Received packet of size: "+str(len(pkt)))
 	if firstPacketTime == 0:
 		firstPacketTime = time.time()
 	numReceived += 1
 
 
 def main():
-    iface = sys.argv[1]
-    print "sniffing on %s" % iface
-    sys.stdout.flush()
-    sniff(iface = iface,
-          prn = lambda x: handle_pkt(x))
+	global firstPacketTime
+	global numReceived	
+ 	iface = sys.argv[1]
+	print "sniffing on %s" % iface
+ 	sys.stdout.flush()
+ 	sniff(iface = iface, prn = lambda x: handle_pkt(x), timeout=5)
+	lastPacketTime = time.time()
+	diff = lastPacketTime - firstPacketTime
+	print("")
+	print("")
+	print("Number of pkts/sec: "+str(numReceived/diff))
+	print("")
 
 def exit_handler():
 	global firstPacketTime
