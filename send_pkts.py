@@ -31,6 +31,7 @@ def eachEvent(nums, slep, msgSize):
     print("-----Event report: {b} pkt/s for {d} seconds------".format(b=str(40/duration),d=str(duration)))
     print("")
 	
+# display event type
 def event(eventID):
     global totalPacketsSent
     global startTime

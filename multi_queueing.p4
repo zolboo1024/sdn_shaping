@@ -2,6 +2,14 @@
 #include <core.p4>
 #include "./v1model.p4"
 
+/*
+ * Send packets at a constant rate.
+ * Inject dummy packets when we cannot reach the given rate with the real traffic.
+ * 2 queues with different priorities. real packets are given high priority
+ * and dummy ones are given low priority and whatever leaves these queues are sent at a constant rate
+ * with constant interarrival time.
+ * faking a flow is using recirculation: send the cloned packet in the queue back to the ingress port.
+ */
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<8> CLONE_FL_1  = 2;
 /*************************************************************************
@@ -165,9 +173,11 @@ control MyIngress(inout headers hdr,
         my_meter.read(meta.meter_tag);
     }
 
+    /* clone from ingress direct to egress pipeline */
     action cloneThis() {
         clone(CloneType.I2E, 5);
     }
+
     table m_read {
         key = {
             hdr.ipv4.dstAddr: exact;
@@ -180,6 +190,8 @@ control MyIngress(inout headers hdr,
         meters = my_meter;
         size = 16384;
     }
+
+    /* only for debug purpose */
     table debug {
         key = {
             standard_metadata.instance_type: exact;
@@ -262,6 +274,8 @@ control MyIngress(inout headers hdr,
         hdr.padd_256.setValid();
         packetLength = packetLength+256;
     }
+
+    /* padding strategies based on size */
     if ((packetLength+128)<=padTo) {
         hdr.padd_128.setValid();
         packetLength = packetLength+128;
@@ -311,7 +325,7 @@ control MyEgress(inout headers hdr,
         actions = {}
     }
    apply {
-
+        /* recirculation: send packets back to the ingress pipeline */
         hdr.ipv4.tos = (bit<8>)standard_metadata.qid;
         if (standard_metadata.instance_type == PKT_INSTANCE_TYPE_INGRESS_CLONE) {
 		recirculate({});
