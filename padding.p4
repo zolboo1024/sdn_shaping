@@ -88,11 +88,22 @@ header padding_1 {
     bit<8> pad_1; 
 }
 
+struct info_t {
+    bit<8> rand_value;
+    ip4Addr_t srcAddr;
+    ip4Addr_t dstAddr;
+}
+
+struct metadata {
+    
+    info_t info;
+}
+
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     udp_t		 udp;
-    stats_t      interarr;
+    /*stats_t      interarr;*/
     padding_256  padd_256;
     padding_128  padd_128;
     padding_64   padd_64;
@@ -195,10 +206,6 @@ control MyIngress(inout headers hdr,
             ipv4_lpm.apply();
             ipv4_firewall.apply();
         }
-        lastTimestamp.read(tmp, 0);
-        lastTimestamp.write(0, standard_metadata.ingress_global_timestamp);
-        hdr.interarr.setValid();
-        hdr.interarr.interarrival = standard_metadata.ingress_global_timestamp - tmp;
 	/* add the padding */
         if ((packetLength+256)<=padTo) {
  		hdr.padd_256.setValid();
@@ -236,6 +243,12 @@ control MyIngress(inout headers hdr,
  		hdr.padd_1.setValid();
 		packetLength = packetLength+1;
 	}
+
+  /* Add digest here */
+  random(meta.info.rand_value,(bit<8>) 0, (bit<8>) 255);
+  meta.info.srcAddr = hdr.ipv4.srcAddr;
+  meta.info.dstAddr = hdr.ipv4.dstAddr;
+  digest(1, meta.info);
     }
 }
 

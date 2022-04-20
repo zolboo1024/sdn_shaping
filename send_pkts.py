@@ -15,12 +15,12 @@ def createMessage(n):
     for i in range(n):
         toRet += "x"
     return toRet
-
+    
 def eachEvent(nums, slep, msgSize):
     startTime = time.time()
     threads = []
     for i in range(nums):
-        thread = Thread(target = sendPacket, args = ("1",createMessage(msgSize),))
+        thread = Thread(target = sendPacket, args = ("2",createMessage(msgSize),))
         thread.start()
         threads.append(thread)
         time.sleep(slep)
@@ -28,9 +28,10 @@ def eachEvent(nums, slep, msgSize):
         thread.join()
     duration = time.time()-startTime
     print("")
-    print("-----Event report: {b} pkt/s for {d} seconds------".format(b=str(nums/duration),d=str(duration)))
+    print("-----Event report: {b} pkt/s for {d} seconds------".format(b=str(40/duration),d=str(duration)))
     print("")
 	
+# display event type
 def event(eventID):
     global totalPacketsSent
     global startTime
@@ -38,12 +39,12 @@ def event(eventID):
     	print("")
     	print("____Starting event 1____")
     	print("")
-    	eachEvent(15,0.3,100)
+    	eachEvent(10,0.5,100)
     elif eventID == 2:
     	print("")
     	print("____Starting event 2____")
     	print("")
-    	eachEvent(23,0.2,120)
+    	eachEvent(10,0.8,120)
     elif eventID == 3:
     	print("")
     	print("____Starting event 3____")
@@ -65,4 +66,7 @@ def sendPacket(sourceIP, msg):
 
 
 if __name__ == '__main__':
-    event(int(sys.argv[1]))
+    while (True):
+    	sendPacket("1", "1")
+    	time.sleep(float(sys.argv[1]))
+    #event(int(sys.argv[1]))
