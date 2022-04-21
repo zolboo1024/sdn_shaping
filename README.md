@@ -38,12 +38,12 @@ To prioritize real packets, we use 2 of the 7 prioritiy queues provided by the `
 in order to be used.
 
 ### Important
-### To activate multi-queues on your instance on `bmv2`, please follow the instructions on here: [link][https://github.com/nsg-ethz/p4-learning/tree/master/examples/multiqueueing]
+### To activate multi-queues on your instance on `bmv2`, please follow the instructions on here: [link](https://github.com/nsg-ethz/p4-learning/tree/master/examples/multiqueueing)
 
 Then, we put the real packets in queue 7 as the highest priority packets and the dummy ones in queue 0 as the lowest priority packets. Then,
 whenever real packets arrive at the switch, it is sent while dummy packets are dropped. 
 
-Finally, we use 2 rate 3 color rate limit algorithm provided natively by `bmv2` to keep traffic at a constant rate. In particular, we use the `meter_tag` in `meta` headers of the arrive packets to tag packets to be dropped if it goes over the specified limit. More information on `bmv2 meter` can be found here: [link][https://github.com/nsg-ethz/p4-learning/tree/master/examples/meter]
+Finally, we use 2 rate 3 color rate limit algorithm provided natively by `bmv2` to keep traffic at a constant rate. In particular, we use the `meter_tag` in `meta` headers of the arrive packets to tag packets to be dropped if it goes over the specified limit. More information on `bmv2 meter` can be found here: [link](https://github.com/nsg-ethz/p4-learning/tree/master/examples/meter)
 
 ## Testing our Solution
 
